@@ -1462,7 +1462,7 @@
   },
   {
    "i": 34,
-   "text": "“Just transformers all the way!”",
+   "text": "“Just just just transformers transformers all the way!”",
    "start": 110.18,
    "end": 113.34,
    "words": [
@@ -1470,13 +1470,31 @@
      "w": "“Just",
      "start": 110.18,
      "end": 110.64,
-     "conf": 0.81
+     "conf": 0.75
+    },
+    {
+     "w": "just",
+     "start": 110.64,
+     "end": 111.1,
+     "conf": 0.75
+    },
+    {
+     "w": "just",
+     "start": 111.1,
+     "end": 111.56,
+     "conf": 0.75
     },
     {
      "w": "transformers",
-     "start": 110.64,
+     "start": 111.56,
+     "end": 112.04,
+     "conf": 0.75
+    },
+    {
+     "w": "transformers",
+     "start": 112.04,
      "end": 112.524,
-     "conf": 0.65
+     "conf": 0.75
     },
     {
      "w": "all",

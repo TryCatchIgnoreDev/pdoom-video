@@ -480,6 +480,7 @@ export default class Prompt extends Scene {
         const ch = txt[i]!;
         const d = this.drift(k.ci + i, t, k.t0);
         const gx = xv + i * adv + d.dx + gx0, gy = base + drop + d.dy;
+        if (sung) this.ctx.encoder()?.inkBounds(c, gx, gy - FS * 0.74, adv, FS);
         let col: string;
         if (gx0) col = rgba('bone', 0.9);
         else if (sung || cool < 1) {

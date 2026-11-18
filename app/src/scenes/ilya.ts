@@ -92,6 +92,7 @@ export default class IlyaScene extends Scene {
           const hot = p > 0 && cool < 1 ? 1 - cool : 0;
           c.globalAlpha = k * fadeAll;
           c.fillStyle = hot > 0.02 ? mixRgba('bone', 'signal', hot, 0.95) : rgba('bone', 0.93);
+          if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, x, y - fs * 0.75, ww, fs);
           c.fillText(w.w, x, y + (1 - k) * 10);
           if (w === T.know) this.redactWord(c, t, x, y, ww, fs);
         }
@@ -141,6 +142,13 @@ export default class IlyaScene extends Scene {
     let x = fx0 + (fw - tw) / 2;
     const y = fy0 + fh * 0.5 + size * 0.34;
     const lit = clamp(spotI);
+    c.save();
+    c.globalAlpha *= 0.85 * (1 - smoothstep(T.show.end, this.ctx.end, t));
+    c.textAlign = 'center';
+    c.font = font(F.mono(500), Math.max(9, fh * 0.16));
+    c.fillStyle = rgba('ember', 0.85);
+    c.fillText(this.ctx.encoder()?.bitTail(t, 32).match(/.{1,4}/g)?.join(' ') ?? '', (fx0 + fx1) / 2, fy1 - fh * 0.08);
+    c.restore();
     const endFade = 1 - smoothstep(this.ctx.end - 0.1, this.ctx.end - 0.03, t);
     c.save();
     c.textBaseline = 'alphabetic';
@@ -150,6 +158,7 @@ export default class IlyaScene extends Scene {
       const s = text[i]!;
       const sw = measure(s, fam, size, size * track);
       const p = Lyrics.wordProgress(w, t);
+      if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, x, y - size * 0.75, sw, size);
       const on = prog(t, w.start - 0.02, w.start + 0.08, ease.outCubic);
       // carved and unlit until sung
       c.shadowBlur = 0;

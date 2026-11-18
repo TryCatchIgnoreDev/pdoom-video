@@ -781,6 +781,10 @@ export default class Bureau extends Scene {
       c.translate(ch.x + ch.jx, ch.y + ch.jy - 4 * fresh);
       c.rotate(ch.rot);
       c.fillStyle = TYPE(ch.dens);
+      const word = this.ctx.lyrics.wordAt(t);
+      if (word && ch.t >= word.start && ch.t < word.end && list !== this.pdoomField) {
+        this.ctx.encoder()?.inkBounds(c, 0, -size * 0.75, size * 0.6, size * 0.85);
+      }
       c.fillText(ch.ch, 0, 0);
       c.restore();
     }
@@ -880,6 +884,7 @@ export default class Bureau extends Scene {
     c.fillText('SCHEMATIC · NOT TO SCALE · DO NOT OPERATE UNSUPERVISED', -880, -516);
     c.letterSpacing = '0px';
     c.fillStyle = PRINT(0.9); c.fillRect(-880, -500, 1760, 1.5);
+
 
     const Ls = this.layers;
     const pp = this.pulsePos(t);
@@ -981,6 +986,7 @@ export default class Bureau extends Scene {
     const fx0 = Ls[0]!.x - fw.width / 2;
     const per = Math.min(0.06, (this.wFwd.end - this.wFwd.start) / fw.glyphs.length);
     for (const g of fw.glyphs) if (t >= this.wFwd.start + g.i * per) { c.fillStyle = PRINT(1); c.fillText(g.ch, fx0 + g.x, yTop); }
+    if (t >= this.wFwd.start && t < this.wFwd.end) this.ctx.encoder()?.inkBounds(c, fx0, yTop - 100, fw.width, 105);
     // M, L, P over h1, h2, y-hat, each on its syllable
     ['M', 'L', 'P'].forEach((ch, k) => {
       const ts = this.syl[k]![0];
@@ -994,6 +1000,7 @@ export default class Bureau extends Scene {
       c.translate(x, yTop);
       c.scale(1 + 0.1 * pop, 1 + 0.1 * pop);
       c.fillStyle = PRINT(1);
+      if (t < this.syl[k]![1]) this.ctx.encoder()?.inkBounds(c, -w / 2, -100, w, 105);
       c.fillText(ch, -w / 2, 0);
       if (k === 2) c.fillText(',', -w / 2 + wb, 0);
       c.restore();
@@ -1049,6 +1056,7 @@ export default class Bureau extends Scene {
     c.fillText('APPENDIX C — LEGACY ARCHITECTURES (FOR REFERENCE ONLY)', -820, -482);
     c.letterSpacing = '0px';
     c.fillStyle = PRINT(0.9); c.fillRect(-820, -467, 1640, 1.5);
+
     // heading: the lyric, printed word by word
     const fam = F.archivo(100, 900), size = 112;
     c.font = font(fam, size);

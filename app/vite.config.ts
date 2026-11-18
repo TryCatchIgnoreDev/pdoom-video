@@ -11,6 +11,14 @@ function repoAssets(): Plugin {
   return {
     name: 'repo-assets',
     configureServer(server) {
+      // These files are fetched at runtime and sit outside Vite's module graph.
+      const assets = assetDirs.map((dir) => normalizePath(path.join(repoRoot, dir)));
+      server.watcher.add(assets);
+      server.watcher.on('change', (file) => {
+        if (assets.some((dir) => normalizePath(file).startsWith(dir + '/'))) {
+          server.ws.send({ type: 'full-reload' });
+        }
+      });
       server.middlewares.use((req, _res, next) => {
         if (assetDirs.some((dir) => req.url?.startsWith(`/${dir}/`))) {
           req.url = `/@fs/${encodeURI(normalizePath(repoRoot))}${req.url}`;

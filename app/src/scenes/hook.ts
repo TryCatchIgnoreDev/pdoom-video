@@ -169,6 +169,19 @@ export default class Hook extends Scene {
       if (n === 3) this.drawTiny(c, t, 3, 1 - smoothstep(this.tNum, this.tNum + 0.06, t), 3);
       this.drawNumberPhase(c, t, inkK);
     }
+    // Knock the arithmetic register into the filled lyric letterforms themselves.
+    const payload = this.ctx.encoder()?.bitTail(t, 64);
+    if (payload && wi >= 0 && !inNum && n !== 3) {
+      c.save();
+      c.globalCompositeOperation = 'source-atop';
+      c.fillStyle = rgba(bgK, 0.85);
+      c.font = font(F.mono(600), 36);
+      c.textAlign = 'center';
+      c.letterSpacing = '3px';
+      c.fillText(payload.slice(0, 32), W / 2, H * 0.49);
+      c.fillText(payload.slice(32), W / 2, H * 0.49 + 42);
+      c.restore();
+    }
     L.upload();
 
     const u = this.comp.u;

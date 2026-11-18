@@ -358,6 +358,8 @@ export default class SpacetimeScene extends Scene {
         const sl = s0 + Ls[j]!;
         const p = map(S.x0 + pts[j]!.x * S.S, S.b0 - pts[j]!.y * S.S);
         if (prev) {
+          const char = ct[st.charOf[si]!]!;
+          if (char && t >= char[0] && t < char[1]) this.ctx.encoder()?.locate(p.x - 8, p.y - 12, p.x + 8, p.y + 12);
           const written = sl <= len;
           const hot = written ? Math.exp(-Math.max(0, len - sl) / 1.4) : 0;
           const c0 = ct[st.charOf[si]!]?.[0] ?? Infinity;

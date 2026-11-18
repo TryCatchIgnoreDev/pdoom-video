@@ -1086,6 +1086,10 @@ export default class OpenScene extends Scene {
       // "surprise" is held past the cut into the loss plate: finish its wipe before the plate dissolves
       const p = lw.w === this.w.surprise ? prog(t, lw.w.start, Math.min(lw.w.end, this.T1 - 0.24)) : Lyrics.wordProgress(lw.w, t);
       const done = prog(t, lw.w.end, lw.w.end + 0.3);
+      if (t >= lw.w.start && t < lw.w.end) {
+        this.tx(ctx, c, lw.x, lw.y, lw.em);
+        this.ctx.encoder()?.inkBounds(ctx, 0, -78, lw.lay.width, 100);
+      }
       const isNerv = lw.w === this.w.nervous;
       const isI = lw.w === this.w.I;
       const isAGI = lw.w === this.w.AGI;

@@ -326,6 +326,7 @@ export default class Paperclips extends Scene {
       const p = Lyrics.wordProgress(w, t);
       const ww = c.measureText(w.w).width;
       c.fillStyle = rgba('bone', 0.3);
+      if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, x, y - 54, ww, 60);
       c.fillText(w.w, x, y);
       if (p > 0) {
         c.save();
@@ -390,6 +391,7 @@ export default class Paperclips extends Scene {
     }
     const shown = text.slice(0, n);
     c.fillStyle = rgba('bone', 0.96);
+    this.ctx.encoder()?.inkBounds(c, pad, 88, Math.max(10, c.measureText(shown).width), 47);
     c.fillText(shown, pad, 128);
     const cur = line.words.find((w) => t >= w.start && t < w.end);
     if (cur) {
@@ -409,6 +411,7 @@ export default class Paperclips extends Scene {
     body.forEach((s, i) => c.fillText(s, pad, 194 + i * 29));
     c.font = font(F.mono(400), 13);
     c.fillStyle = rgba('graphite', 1);
+
     c.fillText('Returning: TBD', pad, ch - 44);
     c.fillText(`Current P(doom): ${formatPDoom(this.pdoom.value(t))} (this message was sent automatically)`, pad, ch - 22);
     c.restore();
@@ -445,6 +448,7 @@ export default class Paperclips extends Scene {
         const g = lay.glyphs[start + i]!;
         const k = clamp(p * w.w.length - i);
         c.fillStyle = k <= 0 ? rgba('bone', 0.16) : p < 1 ? rgba('signal') : rgba('bone', 0.96);
+        if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, g.x, -size * 0.72, g.w, size * 0.75);
         c.fillText(g.ch, g.x, 0);
       }
       gi = start + w.w.length;

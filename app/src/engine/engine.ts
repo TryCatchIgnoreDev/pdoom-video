@@ -6,6 +6,7 @@ import { Lyrics } from './lyrics';
 import { Compositor, FSPass, W, H, PW, PH, SCALE, SS_TAP, makeRT, clearRT } from './gl';
 import { DEFAULT_POST, Post, SHOULDER_GLSL, type PostParams } from './post';
 import { Hud, PDoom, type Caption } from './hud';
+import { ArithmeticCoding } from './compression';
 import type { Frame, Scene, SceneClass, SceneCtx, PostOverrides } from './scene';
 import { loadFonts } from './type';
 import { loadStrokeFonts } from './stroke';
@@ -68,6 +69,8 @@ export class Engine {
   audio!: AudioData;
   lyrics!: Lyrics;
   hud!: Hud;
+  compression: ArithmeticCoding | null = null;
+  showCompression = true;
   post!: Post;
   comp = new Compositor();
   loaded = new Map<string, Loaded>();
@@ -311,9 +314,15 @@ export class Engine {
   }
 
   async init(only?: (e: TimelineEntry) => boolean) {
-    [this.audio, this.lyrics] = await Promise.all([AudioData.load(), Lyrics.load(), loadFonts(), loadStrokeFonts()]) as [AudioData, Lyrics, void, void];
+    [this.audio, this.lyrics, this.compression] = await Promise.all([
+      AudioData.load(),
+      Lyrics.load(),
+      ArithmeticCoding.load(),
+      loadFonts(),
+      loadStrokeFonts(),
+    ]) as [AudioData, Lyrics, ArithmeticCoding | null, void, void];
     this.timeline = this.makeTimeline(this.lyrics, this.audio);
-    this.ctx = { renderer: this.renderer, audio: this.audio, lyrics: this.lyrics, comp: this.comp, W, H, id: '', params: {}, start: 0, end: 0, mapTileMask: (rt, map) => this.mapTileMask(rt, map) };
+    this.ctx = { encoder: () => this.showCompression && !this.hudOff ? this.compression : null, renderer: this.renderer, audio: this.audio, lyrics: this.lyrics, comp: this.comp, W, H, id: '', params: {}, start: 0, end: 0, mapTileMask: (rt, map) => this.mapTileMask(rt, map) };
     this.post = new Post();
     const captions: Caption[] = this.timeline.filter((e) => e.caption).map((e) => {
       const d = e.caption!.delay ?? 0.3;
@@ -512,7 +521,8 @@ export class Engine {
     }
     this.lastSamples = n;
     const hudTex = this.hud.draw(t, { opacity: this.hudOff ? 0 : post.hud, frame: post.frame, readout: post.pdoom, paper: post.paper, pdoomOverride: post.pdoomText, corruption: post.hudCorruption });
-    this.post.render(r, outTex, hudTex, this.finalRT, post, t);
+    const diagram = this.ctx.encoder()?.diagram(t, this.lyrics.wordAt(t), post) ?? null;
+    this.post.render(r, outTex, hudTex, this.finalRT, post, t, diagram);
     this.lastPost = post;
     if (toScreen) {
       this.blit.u.src!.value = this.finalRT.texture;

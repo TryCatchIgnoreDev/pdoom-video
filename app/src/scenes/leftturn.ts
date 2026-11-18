@@ -377,6 +377,7 @@ export default class LeftTurn extends Scene {
     const L = this.ov;
     L.begin(cam);
     const c = L.c;
+
     if (t < T.there) this.drawStamps(c, t);
     if (t < T.without + 0.05) this.drawTerrain(c);
     if (t >= T.and - 0.3 && t < T.without + 0.05) this.drawArrival(c, t, L.px);
@@ -503,6 +504,13 @@ export default class LeftTurn extends Scene {
       c.font = font(F.archivo(125, 900), size);
       c.textAlign = 'center';
       c.fillStyle = col(w, vis);
+      if (t >= w.start && t < w.end) {
+        const m = c.getTransform(), scale = WorldLayer.S;
+        const cx = W / 2 + (m.e - this.ov.w / 2) / scale, cy = H / 2 + (m.f - this.ov.h / 2) / scale;
+        const width = c.measureText(text).width, dx = (Math.abs(m.a) * width + Math.abs(m.c) * size) / (2 * scale);
+        const dy = (Math.abs(m.b) * width + Math.abs(m.d) * size) / (2 * scale);
+        this.ctx.encoder()?.locate(cx - dx, cy - dy, cx + dx, cy + dy);
+      }
       c.fillText(text, 0, size * 0.36);
       c.restore();
     };

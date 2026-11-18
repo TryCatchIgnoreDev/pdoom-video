@@ -40,7 +40,7 @@ export function makeTimeline(ly: Lyrics, au: AudioData): TimelineEntry[] {
     hook3: cut("I'm upping", 2),
     clips: cut('as paperclips'),
     fuse: cut('Too late now'),
-    stack: cut('transformers all the way'),
+    stack: cut('all the way'),
     dense: cut('Post-Chinchilla', 0, 0.05), // 'Post' starts 32 ms before its beat; don't cut 'disobey' in half
     hook4: cut("I'm upping", 3),
     loom: cut('Just as foretold'),

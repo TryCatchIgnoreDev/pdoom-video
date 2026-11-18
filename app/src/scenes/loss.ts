@@ -639,6 +639,9 @@ export default class LossScene extends Scene {
 
     // ------------------------------------------------ text
     const T = this.text; T.clear();
+    const tip = this.sparkPos(t);
+    const marker = this.proj(tip.x, tip.y, tip.z);
+    if (marker && t < this.tNow && t >= this.tDrop) this.ctx.encoder()?.locate(marker.x - 30, marker.y - 30, marker.x + 30, marker.y + 30);
     this.drawLabels(t, T.ctx);
     this.drawChartText(t, T.ctx);
     this.drawCanyonText(t, T.ctx);
@@ -821,6 +824,7 @@ export default class LossScene extends Scene {
         c.save();
         c.translate(p.x, p.y); c.rotate(ang);
         c.scale(s, s * (0.3 + 0.7 * ap));
+        if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, -g.w / 2, -76, g.w, 85);
         c.fillStyle = heatCss(heat, a);
         c.fillText(g.ch, -g.w / 2, 0);
         c.restore();
@@ -994,6 +998,7 @@ export default class LossScene extends Scene {
       const lay = layout(txt, fam, size, -4);
       const x0 = 150, y0 = 188 + size * 0.76;
       c.font = font(fam, size);
+      if (t >= wServ.start && t < wServ.end) this.ctx.encoder()?.inkBounds(c, x0, y0 - size * 0.75, lay.width, size * 0.78);
       const pr = Lyrics.wordProgress(wServ, t) * txt.length;
       const slam = prog(t, wServ.start, wServ.start + 0.12, ease.outCubic);
       c.lineJoin = 'round';

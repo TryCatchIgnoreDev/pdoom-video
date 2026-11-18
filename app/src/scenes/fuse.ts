@@ -685,6 +685,7 @@ export default class Fuse extends Scene {
       const gw = gl.s1 - gl.s0;
       c.save();
       c.translate(x, y); c.rotate(rot);
+      if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, -gw / 2, -this.size * 0.76, gw, this.size * 0.8);
       if (!ign) {
         c.fillStyle = rgba('bone', 0.1);
         c.fillText(gl.ch, -gw / 2, 0);
@@ -846,6 +847,7 @@ export default class Fuse extends Scene {
     c.font = font(F.mono(500), 17); c.letterSpacing = '5px';
     c.fillStyle = rgba('bone', 0.85 * guide);
     c.textAlign = 'right';
+    this.ctx.encoder()?.inkBounds(c, sx - 110, O.y + 32, 220, 85);
     c.fillText('INTELLIGENCE →', XEND - 10, O.y + 40);
     c.textAlign = 'left';
     if (ky > 0) { c.fillStyle = rgba('bone', 0.85 * ky); c.fillText('GOALS ↑', O.x + 22, YEND + 16); }

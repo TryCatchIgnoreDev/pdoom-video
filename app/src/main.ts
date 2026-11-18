@@ -171,6 +171,13 @@ function setupPlayer() {
   }
 
   let t = FROM ?? 0;
+  if (import.meta.hot) {
+    const key = `preview-time:${location.pathname}${location.search}`;
+    const saved = sessionStorage.getItem(key);
+    if (saved !== null && Number.isFinite(Number(saved))) t = Number(saved);
+    sessionStorage.removeItem(key);
+    import.meta.hot.on('vite:beforeFullReload', () => sessionStorage.setItem(key, String(t)));
+  }
   let playing = false;
   let loop: [number, number] | null = null;
   let lastAudioT = 0, lastPerf = 0;
@@ -179,9 +186,16 @@ function setupPlayer() {
 
   const toggle = () => { playing = !playing; if (playing) { audio.currentTime = t; audio.play(); } else audio.pause(); };
   canvas.onclick = toggle;
+  const encoder = document.getElementById('encoder') as HTMLButtonElement;
+  encoder.hidden = !engine.compression;
+  const toggleEncoder = () => {
+    engine.showCompression = !engine.showCompression;
+    encoder.setAttribute('aria-pressed', String(engine.showCompression));
+  };
+  encoder.onclick = toggleEncoder;
   scrub.oninput = () => seek(parseFloat(scrub.value));
   window.addEventListener('keydown', (ev) => {
-    if (ev.key === ' ') { ev.preventDefault(); toggle(); }
+    if (ev.key === ' ' && ev.target !== encoder) { ev.preventDefault(); toggle(); }
     if (ev.key === 'ArrowRight') seek(t + (ev.shiftKey ? 5 : 1));
     if (ev.key === 'ArrowLeft') seek(t - (ev.shiftKey ? 5 : 1));
     if (ev.key === '.') seek(t + 1 / 60);
@@ -191,6 +205,7 @@ function setupPlayer() {
       loop = loop ? null : e ? [e.start, e.end] : null;
     }
     if (ev.key === 'h') ui.classList.toggle('hidden');
+    if (ev.key === 'c') toggleEncoder();
     if (ev.key === ']') { const e = TIMELINE.find((x) => x.start > t + 0.01); if (e) seek(e.start); }
     if (ev.key === '[') { const es = TIMELINE.filter((x) => x.start < t - 0.3); const e = es[es.length - 1]; if (e) seek(e.start); }
   });

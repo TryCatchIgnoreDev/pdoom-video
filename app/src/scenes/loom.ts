@@ -227,6 +227,7 @@ export default class Loom extends Scene {
     c.fillText(this.context, ROOT_X - 26, Y0 - 16);
     c.textAlign = 'left';
     tr.draw(c, t, v.z);
+    this.ctx.encoder()?.inkBounds(c, tr.tipX(t) - 110, Y0 - 70, 110, 70);
     c.restore();
     comp.draw(renderer, this.layer.upload(), out, { mode: 'replace' });
 
@@ -350,6 +351,7 @@ export default class Loom extends Scene {
         const tw = c.measureText(txt).width;
         const p = Lyrics.wordProgress(w, t);
         const bx = x - 12, by = y - size * 0.78, bw = tw + 24, bh = size * 0.86;
+        if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, bx, by, bw, bh);
         // revealed word underneath
         c.fillStyle = p <= 0 ? rgba('bone', 0) : p < 1 ? rgba('signal') : rgba('bone', 0.97);
         c.fillText(txt, x, y);

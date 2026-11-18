@@ -12,7 +12,7 @@ const LY = [
   [85.0, 88.0, "Without a single CDR"], [89.4, 95.0, "Gato, please don't let me go"],
   [95.4, 97.4, "I'm upping my P(doom),"], [97.5, 98.9, "as paperclips fill the room"], [99.0, 100.4, "Killswitch guy's on PTO"],
   [100.5, 102.4, "Now there's nowhere left to go"], [102.5, 104.4, "Too late now, we lit the fuse"], [105.4, 109.4, "Orthogonality thesis blues"],
-  [109.4, 113.4, "“Just transformers all the way!”"], [113.5, 115.4, "Till you learned to disobey"], [115.5, 116.9, "Post-Chinchilla, super-dense"],
+  [110.18, 113.34, "“Just just just transformers transformers all the way!”"], [113.5, 115.4, "Till you learned to disobey"], [115.5, 116.9, "Post-Chinchilla, super-dense"],
   [117.0, 118.9, "Breaking through each safety fence"], [119.0, 120.4, "Hundred thousand GPU"], [120.9, 123.4, "RLHF goes askew"],
   [123.5, 125.9, "I'm upping my P(doom)"], [126.0, 127.9, "Just as foretold by Loom"], [128.0, 129.9, "From masked pre-training days"],
   [130.0, 131.9, "To recursive self-upgrade"], [132.0, 135.4, "What did Ilya see? We'll never know"], [137.4, 140.5, "Was it all for show?"]

@@ -538,6 +538,7 @@ export default class Shoggoth extends Scene {
         const A = this.glyphAff(P, g.U, g.V, g.m, gl.w / 2, -capPx / 2, sc, squash);
         if (!A) return;
         c.setTransform(A[0], A[1], A[2], A[3], A[4], A[5]);
+        if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, 0, -capPx, gl.w, capPx);
         c.fillStyle = k === 0 ? '#f00' : '#0f0';
         c.fillText(gl.ch, 0, 0);
         if (i < n) { c.fillStyle = '#00f'; c.fillText(gl.ch, 0, 0); }
@@ -584,9 +585,11 @@ export default class Shoggoth extends Scene {
       for (const [a0, a1] of pass.clip) if (a1 > a0) c.rect(a0, -10, a1 - a0, H + 20);
       c.clip();
       c.transform(A[0], A[1], A[2], A[3], A[4], A[5]);
+
       let xx = 0;
       words.forEach((w, i) => {
         const p = sungP(w, t);
+        if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, xx, -px * 0.75, ws[i]!, px * 0.8);
         c.fillStyle = pass.onMask ? rgba('ink', 0.22) : rgba('bone', 0.3);
         c.fillText(txts[i]!, xx, 0);
         if (p > 0) {

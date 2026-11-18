@@ -560,6 +560,7 @@ export default class Room extends Scene {
           c.globalAlpha *= vis;
           c.translate(0, (1 - vis) * 18);
           c.fillStyle = rgba('bone', 0.28);
+          if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, xx, y - size * 0.75, ww, size * 0.78);
           c.fillText(txt, xx, y);
           c.beginPath(); c.rect(xx - 4, y - size, (ww + 8) * p, size * 1.3); c.clip();
           c.fillStyle = p < 1 ? rgba('signal') : rgba('bone', 0.96);
@@ -1392,6 +1393,7 @@ export default class Room extends Scene {
         const A = this.planeAffine(cam, P, ux, uy, r.m, g.w / 2, -capPx / 2, 1 + 0.7 * (1 - e), t, warpA);
         if (!A) continue;
         c.setTransform(A.a, A.b, A.c, A.d, A.e, A.f);
+        if (t < w.end) this.ctx.encoder()?.inkBounds(c, 0, -capPx, g.w, capPx);
         const hot = Math.exp(-age / 0.05);
         const cool = prog(t, w.end - 0.04, w.end + 0.2);
         c.globalAlpha = clamp(age / 0.025);

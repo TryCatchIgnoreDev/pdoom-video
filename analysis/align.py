@@ -73,6 +73,14 @@ FIX = {
     # "you are" is one long note; vowel change /u/ -> /a/ (spectral centroid
     # 1020 -> 1180 Hz) at 83.93.  CTC models disagree (83.94 mms / 84.58 lv).
     (25, 6): dict(start=83.93, conf=0.5),
+    # The bridge vocal stutters on successive beats. Keep these attacks when
+    # regenerating the word alignment from the plain-text transcription.
+    (34, 0): dict(start=110.18, end=110.64, conf=0.75),
+    (34, 1): dict(start=110.64, end=111.10, conf=0.75),
+    (34, 2): dict(start=111.10, end=111.56, conf=0.75),
+    (34, 3): dict(start=111.56, end=112.04, conf=0.75),
+    (34, 4): dict(start=112.04, end=112.524, conf=0.75),
+    (34, 5): dict(start=112.524),
     # held notes whose automatic end ran into the next (unlisted) vocal
     (33, 2): dict(end=108.45),
     (45, 4): dict(end=140.55),

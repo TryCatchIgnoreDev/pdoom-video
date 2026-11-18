@@ -1,5 +1,5 @@
 // FIG. 11 — "Architecture (recursive)". The bridge, part 1:
-//   “Just transformers all the way!” / Till you learned to disobey
+//   “Just just just transformers transformers all the way!” / Till you learned to disobey
 // An infinite vertical stack of transformer blocks drawn as technical line diagrams. The camera
 // falls through it one block per beat; the quote sits one word (group) per block. On "disobey"
 // the fall stops dead, one block rotates out of alignment and the word highlights right-to-left.
@@ -26,7 +26,7 @@ const BX0 = -2.5, BX1 = 3.7; // sublayer box x range
 type Seg = [number, number, number, number, number, number, number, number, number, number, number]; // a(3) b(3) w rgb a
 
 interface Step { t: number; amt: number; kind: 'drop' | 'beat' | 'stop' }
-interface Group { block: number; words: Word[]; planes: TextPlane[]; lay: { x: number; y: number; s: number }[]; stepT: number; echo: boolean }
+interface Group { block: number; words: Word[]; planes: TextPlane[]; lay: { x: number; y: number; s: number }[]; stepT: number }
 
 const C_BONE = lin('bone');
 const C_ASH = lin('ash');
@@ -79,7 +79,7 @@ export default class Stack extends Scene {
 
   override async init() {
     const { lyrics, audio } = this.ctx;
-    const q = lyrics.get('transformers all the way');
+    const q = lyrics.get('all the way');
     const till = lyrics.get('Till you learned');
     this.disobey = till.words[till.words.length - 1]!;
     const t0 = this.ctx.start, t1 = this.ctx.end;
@@ -129,17 +129,10 @@ export default class Stack extends Scene {
       if (ws.includes(this.disobey)) continue;
       this.groups.push(this.makeGroup(block, ws, stepTimeOf(block)));
     }
-    // held word: the blocks between a long word and the next group echo it (ghost copies)
-    const tw = q.words.find((w) => /transformers/i.test(w.w));
-    if (tw) {
-      const g = this.groups.find((g) => g.words.includes(tw))!;
-      const next = this.groups.find((x) => x.block > g.block);
-      this.tHold0 = tw.start; this.tHold1 = tw.end;
-      for (let b = g.block + 1; b < (next ? next.block : g.block + 1); b++) {
-        const echo = this.makeGroup(b, [tw], stepTimeOf(b), true);
-        this.groups.push(echo);
-      }
-    }
+    // The camera orbits across the repeated words; each has its own sung block.
+    const repeats = q.words.filter((w) => /transformers/i.test(w.w));
+    this.tHold0 = repeats[0]?.start ?? q.start;
+    this.tHold1 = repeats.at(-1)?.end ?? q.end;
 
     // DISOBEY as individual letters (they break rank), set on the font's own spacing and kerning
     // (rounds sit closer than straights: a constant gap between the ink boxes left S–O and O–B loose),
@@ -197,7 +190,7 @@ export default class Stack extends Scene {
     ];
   }
 
-  private makeGroup(block: number, ws: Word[], stepT: number, echo = false): Group {
+  private makeGroup(block: number, ws: Word[], stepT: number): Group {
     const fam = F.archivo(75, 900);
     const capH = 2.2;
     const planes = ws.map((w) => {
@@ -230,7 +223,7 @@ export default class Stack extends Scene {
       for (const i of r) { lay[i] = { x, y, s: sAll }; x += (planes[i]!.w + gap) * sAll; }
     });
     planes.forEach((p, i) => p.mesh.scale.setScalar(lay[i]!.s));
-    return { block, words: ws, planes, lay, stepT, echo };
+    return { block, words: ws, planes, lay, stepT };
   }
 
   // ------------------------------------------------------------ block template
@@ -601,25 +594,30 @@ export default class Stack extends Scene {
 
   private updateWords(t: number, disK: ReturnType<Stack['disobeyTransform']>) {
     const zf = HZ + 0.55;
-    const main = new Map<Word, Group>();
-    for (const g of this.groups) if (!g.echo) for (const w of g.words) main.set(w, g);
     for (const g of this.groups) {
       const by = -g.block * P;
       g.planes.forEach((tp, i) => {
         const w = g.words[i]!;
         const pr = Lyrics.wordProgress(w, t);
-        const vis = g.echo ? smoothstep(g.stepT - 0.5, g.stepT - 0.1, t) : smoothstep(w.start - 0.42, w.start - 0.05, t);
+        const vis = smoothstep(w.start - 0.42, w.start - 0.05, t);
         const done = t >= w.end + 0.03 ? 1 : 0; // instant cool to bone (a linear blend reads salmon)
         const L = g.lay[i]!;
         tp.mesh.position.set(L.x, by + L.y - 0.1, zf);
         tp.mesh.rotation.set(0, 0, 0);
-        tp.mesh.userData.op = vis * (g.echo ? 0.8 : 1);
-        tp.set({ prog: pr, dir: 1, done, aDim: g.echo ? 0.3 : 0.45, fillDim: 0.04, flash: g.echo ? 0 : pulse(t, w.start, 0.07) * 1.4 });
+        if (t >= w.start && t < w.end) {
+          const loc = tp.mesh.position;
+          const corners = [0, tp.w * L.s].flatMap(x => [-0.5, 0.5].map(y =>
+            new THREE.Vector3(loc.x + x, loc.y + y * tp.h * L.s, loc.z).project(this.cam)));
+          const xs = corners.map(v => (1 + v.x) * W / 2), ys = corners.map(v => (1 - v.y) * H / 2);
+          this.ctx.encoder()?.locate(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys));
+        }
+        tp.mesh.userData.op = vis;
+        tp.set({ prog: pr, dir: 1, done, aDim: 0.45, fillDim: 0.04, flash: pulse(t, w.start, 0.07) * 1.4 });
       });
     }
     // giant curly quotes: opening hangs left of the first word, closing after the last
     const findQ = (ch: string) => {
-      for (const g of this.groups) if (!g.echo) { const i = g.words.findIndex((w) => w.w.includes(ch)); if (i >= 0) return { g, i }; }
+      for (const g of this.groups) { const i = g.words.findIndex((w) => w.w.includes(ch)); if (i >= 0) return { g, i }; }
       return null;
     };
     const qo = findQ('“'), qc = findQ('”');

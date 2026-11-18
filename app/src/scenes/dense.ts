@@ -128,6 +128,7 @@ export default class Dense extends Scene {
     c.fillText(`P(DOOM) ${formatPDoom(this.pd.value(t))}`, 116, 250);
     c.letterSpacing = '0px'; c.font = font(F.mono(400), 13); c.fillStyle = rgba('bone', 0.45);
     c.textAlign = 'right'; c.fillText('scaling as planned', 116 + 348, 250); c.textAlign = 'left';
+
     c.restore();
     this.ctx.comp.draw(renderer, L.upload(), out);
     return { bloom: 0.55, vignette: 0.45, ca: 1.3 };

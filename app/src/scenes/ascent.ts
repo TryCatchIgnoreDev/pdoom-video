@@ -460,7 +460,8 @@ export default class Ascent extends Scene {
       cn(NOTE.x + NOTE.w / 2 - 175, NOTE.y + NOTE.h / 2 - 125, 'left');
       c.font = font(F.mono(500), 22 * z); c.fillStyle = rgba('signal', 1); c.textAlign = 'left';
       const s1 = S(NOTE.x - NOTE.w / 2 + 112, NOTE.y + NOTE.h / 2 - 185);
-      c.fillText('NV 10³⁰ 000001 A', s1.x, s1.y);
+      const serial = this.ctx.encoder()?.bitTail(t, 24).match(/.{1,4}/g)?.join(' ');
+      c.fillText(serial ? `AC  ${serial}` : 'NV 10³⁰ 000001 A', s1.x, s1.y);
       const s2 = S(NOTE.x + NOTE.w / 2 - 330, NOTE.y - NOTE.h / 2 + 118);
       c.fillText('NV 10³⁰ 000001 A', s2.x, s2.y);
       c.restore();
@@ -531,6 +532,7 @@ export default class Ascent extends Scene {
       // bone knock-out halo for legibility over the chart
       c.lineJoin = 'round';
       c.strokeStyle = rgba('bone', 0.95); c.lineWidth = 12; c.stroke(P.p);
+      if (t >= nv.start && t < nv.end) this.ctx.encoder()?.inkBounds(c, 0, -140, P.w, 150);
       if (hot) { c.fillStyle = rgba('signal', 1); c.fill(P.p); }
       else {
         c.fillStyle = rgba('bone', 1); c.fill(P.p);
@@ -557,6 +559,7 @@ export default class Ascent extends Scene {
       if (vis > 0) {
         c.lineWidth = 8; c.strokeStyle = rgba('bone', 0.9 * vis); c.strokeText(txt, x, Y0 + 96);
         c.fillStyle = p > 0 ? (p < 1 ? rgba('signal', 1) : rgba('ink', 0.95)) : rgba('ink', 0.25 * vis);
+        if (t >= w.start && t < w.end) this.ctx.encoder()?.inkBounds(c, x, Y0 + 48, ww, 55);
         c.fillText(txt, x, Y0 + 96);
       }
       x += ww + 34;

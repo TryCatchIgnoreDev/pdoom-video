@@ -1,100 +1,133 @@
-# I'm Upping My P(doom) — music video
+# I'm Upping My P(doom) — LLM Arithmetic Coding Visualization
 
-A generative, code-rendered music video with word-synced karaoke typography. Every frame is a deterministic function of song time, so the live preview in the browser and the offline 1080p60 (or 4K60) export are identical.
+A real-time WebGL / Three.js music-video visualization comparing **LLM arithmetic coding (`Qwen3.5-9B-Base`)** against **traditional compression (`zlib -9`)** live over the synced lyrics of *"I'm Upping My P(doom)"*, inspired by **3Blue1Brown**'s latest video and built on top of [`mexicat/pdoom-video`](https://github.com/mexicat/pdoom-video).
 
-**Watch it in 4K on YouTube:** https://www.youtube.com/watch?v=5EoO5413dBY
+Every frame is a deterministic function of song time `t`, so interactive browser preview and offline 1080p60 / 4K60 renders are pixel-identical.
 
-The YouTube upload is a slightly outdated render. For the latest and best-quality version, render it locally (see [Render the video](#render-the-video)).
+- **Watch (1080p60):** https://youtu.be/lfLOvUfdljQ
+- **Watch Shorts (1080×1920, 60fps):** https://youtube.com/shorts/450JT-PPimk
+- **Original `mexicat/pdoom-video` 4K release:** https://www.youtube.com/watch?v=5EoO5413dBY
 
-The video was made with Claude (Opus 5.5) in Claude Code: the concept and treatment, the lyric alignment and audio analysis, the renderer, every scene and the renders were all worked out in conversation with Claude.
+---
 
-The song is not ours: see [Credits](#credits) for who wrote and made it.
+## Compression Benchmark (`"I'm Upping My P(doom)"` Lyrics)
 
-The concept, style bible and plate-by-plate treatment are in [`docs/TREATMENT.md`](docs/TREATMENT.md). The engine and scene API are documented in [`docs/ENGINE.md`](docs/ENGINE.md).
+Exact lossless compression trace computed across all **374 BPE tokens** (`1,326 bytes` / `1,322 chars` of aligned UTF-8 lyrics) using **Qwen3.5-9B-Base** (`Q4_K_S.gguf`, `vocabSize = 248,320`, `28`-bit Softmax CDF + `62`-bit arithmetic coder) versus `zlib.compress(..., level=9)`:
 
-## Layout
+| Stream / Method | Compressed Size | Payload Bits | Bits / Byte | Compression Ratio |
+|---|---:|---:|---:|---:|
+| **Raw UTF-8 Lyrics** | `1,326 B` | `10,608 b` | `8.00 bpb` | `1.00×` |
+| **`zlib -9` (Traditional)** | `772 B` | `6,176 b` | `4.66 bpb` | `1.72×` |
+| **`Qwen3.5-9B-Base` Arithmetic Coding** | **`294 B`** (`22 B` header + `272 B` payload) | **`2,176 b`** (`2,168.87` entropy bits) | **`1.77 bpb`** | **`4.51×`** |
 
-- `audio/pdoom.mp3` — the song (the Claude-Pop version, see Credits).
-- `lyrics/lyrics.src.js` — the original line-level lyrics (approximate timings).
-- `analysis/` — Python (uv) tools that produced the timing data: Demucs stem separation, CTC forced alignment cross-checked with Whisper, beat/downbeat/onset analysis. See `analysis/align.py` and `analysis/analyze.py`.
-- `data/lyrics.json` — word-level (and some syllable-level) lyric timings.
-- `data/audio.json` — tempo (132.007 BPM), beats, downbeats, sections, drum/vocal onsets and loudness envelopes.
-- `app/` — the renderer: TypeScript + three.js, bun + Vite.
-  - `src/engine/` — renderer core: timeline playback, post-processing (bloom, halation, grain), typography (Archivo, IBM Plex Mono, Cormorant Garamond, single-stroke plotter fonts), GPU line batches, HUD.
-  - `src/scenes/` — one module per plate (`open`, `loss`, `prompt`, `hook`, `room`, `shoggoth`, `spacetime`, `ascent`, `bureau`, `leftturn`, `paperclips`, `fuse`, `stack`, `dense`, `loom`, `ilya`, `outro`) plus shared motifs.
-  - `src/timeline.ts` — the edit: scene windows anchored to lyric lines and snapped to the beat grid.
-  - `scripts/render.ts` — offline renderer (headless Chrome → raw frames over WebSocket → ffmpeg).
-- `out/` — renders (not in the repo).
+Lossless round-trip verified in `data/lyrics.llmc` (`exactMatch: true`, SHA-256 `ed9bc5895d484e55891d6bb9cbb41f3255d79a15f72678176bfddaf2627006c9`).
+
+---
+
+## Key Additions Over Upstream
+
+- **Scene-Native Arithmetic Coding HUD (`app/src/engine/compression.ts`, `engine.ts`, `post.ts`):**
+  - Composited into the HDR pipeline before tone-mapping, film grain, and vignette, automatically inverting into ink-on-paper colors on light plates.
+  - Hand-tuned corner schedule (`CORNER_SCHEDULE`) anchored to clean margins with smooth transitions at scene and lyric boundaries.
+  - Real-time cumulative byte & ratio readout, per-token probability interval ladder, 1000-digit decimal zoom axis (`data/compression.json`), and live `LLM ARITHMETIC` vs `ZLIB -9 (TRADITIONAL)` bitstreams.
+  - Live toggle with **`c`** or the **Encoder** button (`app/index.html`, `app/src/main.ts`).
+- **Qwen3.5-9B Arithmetic Coding & Trace Pipeline (`analysis/compress_lyrics.py`):**
+  - Runs deterministic Softmax CDF + 62-bit arithmetic coding over `data/lyrics.json` via `llama-cpp` / `llm-compressor` and verifies byte-for-byte `zlib -9` and round-trip reconstruction.
+- **Node.js Offline Renderer (`app/scripts/render_node.mjs`):**
+  - Node v24 + `playwright-core` headless Chrome + RFC-6455 WebSocket raw `rgb24` frame pipeline into `ffmpeg` (`libx264`, default `--crf 19`, `--preset slow`, explicit `bt709` color tagging, `320k` AAC audio), avoiding Bun Playwright Windows pipe hangs while supporting `stills`, `sheet`, `perf`, and `video`.
+
+---
+
+## Repository Layout
+
+- `audio/pdoom.mp3` — Song audio (Claude-Pop Suno version; see [Credits](#credits)).
+- `lyrics/lyrics.src.js` — Line-level source lyrics with timestamps.
+- `data/lyrics.json`, `data/lyrics.approx.json` — Word/syllable-level lyric timings.
+- `data/compression.json`, `data/lyrics.llmc` — Verified `Qwen3.5-9B-Base` arithmetic coding + `zlib -9` comparison trace and compressed binary.
+- `data/audio.json` — Tempo (`132.007 BPM`), beats, downbeats, sections, onsets, and loudness envelopes.
+- `analysis/` — Python tools for forced alignment (`align.py`, `analyze.py`) and LLM arithmetic compression trace generation (`compress_lyrics.py`).
+- `app/` — TypeScript + Three.js + Vite renderer (`src/engine/`, `src/scenes/`, `src/timeline.ts`, `scripts/render.ts`, `scripts/render_node.mjs`).
+- `docs/` — [`docs/TREATMENT.md`](docs/TREATMENT.md) and [`docs/ENGINE.md`](docs/ENGINE.md).
+- `out/` — Exported renders (gitignored).
+
+---
 
 ## Requirements
 
-[bun](https://bun.sh), Google Chrome (the offline renderer drives it headless through playwright-core) and ffmpeg with libx264. The analysis tools need [uv](https://docs.astral.sh/uv/); the renderer doesn't.
+- [Node.js](https://nodejs.org/) (v22+/v24+) or [Bun](https://bun.sh)
+- Google Chrome / Chromium (driven headless via `playwright-core`)
+- `ffmpeg` (`libx264` + `aac`) on `PATH`
+- Optional for regenerating `data/compression.json`: Python environment with `llm-compressor` / `llama-cpp-python` and `Qwen3.5-9B-Base.Q4_K_S.gguf`
 
-## Preview
+---
+
+## Interactive Preview
 
 ```sh
 cd app
-bun install
-bunx vite
+npm install   # or: bun install
+npm run preview:lan
 ```
 
-Open http://localhost:5173 and use the keys below. `?t=23` starts at a given time.
+Open `http://localhost:5173` (or the LAN URL printed by Vite). Append `?t=110` to jump directly to the transformer bridge, or `?export=1` for clean viewport mode.
 
 | Key | Action |
 |---|---|
-| space | play / pause |
-| ← / → | seek ±1 s (±5 s with shift) |
-| `,` / `.` | step one frame |
-| `[` / `]` | previous / next scene |
-| `l` | loop the current scene |
-| `h` | hide the UI |
+| `Space` | Play / pause |
+| `←` / `→` | Seek ±1 s (±5 s with `Shift`) |
+| `,` / `.` | Step one frame (at 60 fps) |
+| `[` / `]` | Previous / next scene |
+| `l` | Loop the current scene |
+| `h` | Hide / show UI bar |
+| `c` | Show / hide the arithmetic coding overlay |
 
-The preview renders in real time on a recent Mac. The export is not real time and is heavier.
+---
 
-## Render the video
+## Rendering Offline Video
+
+### Cross-platform Node.js Renderer (Recommended on Windows)
 
 ```sh
 cd app
-bun scripts/render.ts video --samples auto --shutter 0.2 --out ../out/pdoom.mp4
+node scripts/render_node.mjs video --samples auto --shutter 0.2 --crf 19 --preset slow --out ../out/pdoom-1080p60.mp4
 ```
 
-- **Output:** 1920×1080 at 60 fps, x264 CRF 16, AAC audio.
-- **Motion blur:** every frame is the average of many sub-frames spread over a short shutter (`--shutter 0.2`, a fifth of the frame time), so fast motion leaves a continuous streak instead of a few stepped copies. `--samples auto` picks the count for each 32×32 tile of the frame: 12 where the image is still, 36 for ordinary camera motion, 108 or 324 for whips, slams and fast zooms. A tile stops once more sub-frames would no longer change it by more than `--tol` levels of 255 (default 3), and later sub-frames skip it, so a fast object over a still background costs little more than the object. `--refine frame` picks one count for the whole frame instead (slower, the sampler before tiles). `--samples N` takes a fixed N (`--samples 4` makes a quick draft). How it works: "Motion blur and sampling" in [`docs/ENGINE.md`](docs/ENGINE.md).
-- **Pipeline:** two headless Chromes (`--workers 2`) render chunks of 8 frames (`--chunk`) in turn and stream them to one ffmpeg, which gets them in order: the file is the same as from one renderer. One renderer already keeps the GPU busy in the heavy scenes; the second fills the gaps in the light ones. Frames that wait for the encoder are buffered in memory up to `--mem-gb` (default 1) and then on disk up to `--spool-gb` (default 20, in the system temp folder), so the renderers don't wait for x264 in the light scenes and x264 catches up in the heavy ones.
-- **Other modes:** `stills`, `sheet` (contact sheets, `--cuts` for every scene boundary), `perf`, and `plates` (regenerates `public/plates/`, the stills used by the outro's rewind montage; rerun it after changing a scene).
+To also produce a vertical 9:16 **YouTube Shorts** version (`1080×1920`, rotated 90° clockwise):
 
-### 4K
+```sh
+ffmpeg -y -i out/pdoom-1080p60.mp4 -vf "transpose=1,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709" -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -x264-params aq-mode=3 -c:a copy -movflags +faststart out/pdoom-shorts-1080x1920-60fps.mp4
+```
+
+Other modes supported by `render_node.mjs`: `stills --t 20.1,73.8,111.7`, `sheet --from 0 --to 10 --n 12`, and `perf --from 0 --to 5`.
+
+### Upstream Bun Renderer (`4K` / `macOS`)
 
 ```sh
 cd app
 bun scripts/render.ts video --scale 2 --samples auto --shutter 0.2 --x264 aq-mode=3:rc-lookahead=30 --out ../out/pdoom-4k.mp4
 ```
 
-- **Output:** a true 3840×2160 render (not an upscale): every layer, line and shader is rendered at the physical resolution. Scenes are laid out in 1920×1080 logical pixels, so the 4K frame looks like the 1080p one, only sharper.
-- **Cost:** GPU-bound. A frame takes from about 40 ms (a still frame) to several seconds (the ray-marched rooms at 108–324 sub-frames). The whole song takes about 57 minutes on an M5 Pro. Memory peaks at about 23 GB: up to 6 GB for each headless Chrome, and ffmpeg at about 3.5 GB for most of the render (the shorter x264 lookahead above keeps it down) but up to 10 GB near the end.
-- **Encoding:** the film grain is rendered per 4K pixel, which is expensive to encode: at the default CRF 16 the file runs at about 670 Mbit/s (13 GB for the song, 8× the 1080p file), `--crf 18` gives about 450 Mbit/s and `--crf 20` about 230 Mbit/s.
-- `--scale 2` works with every mode. `stills` then saves full-resolution PNGs, and `perf` measures 4K frame times. In the browser preview, add `&scale=2` to the URL.
+---
 
-## Regenerate the timing data
-
-The committed `data/*.json` files are all the renderer needs. Regenerating them needs the stems and intermediates, which are not in the repo:
-
-- **Stems:** Demucs `htdemucs_ft` into `analysis/stems/htdemucs_ft/pdoom/` (`uv run python -m demucs -n htdemucs_ft -o stems ../audio/pdoom.mp3`), plus the lead vocal from a mel-band-roformer karaoke model (audio-separator) in `analysis/stems/karaoke/lead.wav`.
-- **Intermediates:** `ctc_emissions.py`, `whisper_run.py` and `vocal_feats.py` write them to `analysis/work/`. The pipeline is described at the top of `analysis/align.py`.
+## Regenerating Compression Trace (`data/compression.json`)
 
 ```sh
-cd analysis
-uv run python align.py      # data/lyrics.json
-uv run python analyze.py    # data/audio.json
+python analysis/compress_lyrics.py
 ```
 
-The models download about 4 GB of weights into `analysis/.cache/`; delete that folder afterwards.
+By default this loads `Qwen3.5-9B-Base.Q4_K_S.gguf` from `~/.lmstudio/models/...`, compresses the lyric timeline extracted from `data/lyrics.json`, checks lossless SHA-256 reconstruction, computes the byte-aligned `zlib -9` trace, and writes `data/lyrics.llmc` and `data/compression.json`.
+
+---
 
 ## Credits
 
-- **Song:** "I'm Upping My P(doom)". The lyrics are by [osmarks](https://docs.osmarks.net/hypha/p%28doom%29_song_objectively_correct_interpretation), built on an opening verse and chorus by [MusicPerson](https://www.udio.com/creators/MusicPerson), with lines suggested on the EleutherAI Discord and help from Claude on the outro and final chorus. The original was generated with Udio and released in November 2024 ([YouTube](https://www.youtube.com/watch?v=uEB5E67vcPA)). This video uses the "Claude-Pop" version made with Suno, posted by [deckard (@slimer48484)](https://x.com/slimer48484/status/2097752569212756134) in September 2026.
-- **Fonts:** Archivo, IBM Plex Mono and Cormorant Garamond (SIL Open Font License). Single-stroke EMS and Hershey fonts via the `hersheytext` package (OFL / public domain).
+- **Original Render Engine & Music Video:** [`mexicat/pdoom-video`](https://github.com/mexicat/pdoom-video) by **Giacomo Magnanini** ([Watch original 4K](https://www.youtube.com/watch?v=5EoO5413dBY)).
+- **Inspiration:** Inspired by [3Blue1Brown](https://www.youtube.com/@3blue1brown)'s latest video on compression & information theory / LLMs.
+- **Song ("I'm Upping My P(doom)"):** Lyrics by [osmarks](https://docs.osmarks.net/hypha/p%28doom%29_song_objectively_correct_interpretation), built on an opening verse and chorus by [MusicPerson](https://www.udio.com/creators/MusicPerson) with suggestions from the EleutherAI Discord and Claude. Original generated with Udio (November 2024, [YouTube](https://www.youtube.com/watch?v=uEB5E67vcPA)). This project uses the `"Claude-Pop"` Suno version posted by [deckard (@slimer48484)](https://x.com/slimer48484/status/2097752569212756134) (September 2026).
+- **Fonts:** Archivo, IBM Plex Mono, and Cormorant Garamond (SIL Open Font License); single-stroke EMS and Hershey fonts via `hersheytext` (OFL / public domain).
+
+---
 
 ## License
 
-The code is released under the [MIT License](LICENSE). The fonts in `app/public/fonts/` keep their own licenses (see Credits), and the song and lyrics (`audio/`, `lyrics/`, `data/lyrics.json`) are not covered by it: they belong to their authors (see Credits).
+The source code (both upstream [`mexicat/pdoom-video`](https://github.com/mexicat/pdoom-video) and the additions in this fork) is released under the [MIT License](LICENSE). Fonts in `app/public/fonts/` retain their respective licenses, and the song/lyrics (`audio/`, `lyrics/`, `data/lyrics.json`) remain the property of their respective authors (see [Credits](#credits)).

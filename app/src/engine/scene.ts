@@ -2,12 +2,14 @@
 // into the render target it is given. Everything must be a deterministic function of
 // time (plus internal state advanced only through render() calls, see `stateful`).
 import type * as THREE from 'three';
+import type { ArithmeticCoding } from './compression';
 import type { AudioData, AudioSample } from './audio';
 import type { Lyrics } from './lyrics';
 import type { Compositor } from './gl';
 import type { PostParams } from './post';
 
 export interface SceneCtx {
+  encoder(): ArithmeticCoding | null;
   renderer: THREE.WebGLRenderer;
   audio: AudioData;
   lyrics: Lyrics;
